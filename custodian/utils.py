@@ -27,6 +27,9 @@ from functools import cached_property
 import pandas as pd
 import requests
 from sortedcontainers import SortedDict
+from decimal import Decimal, getcontext
+
+getcontext().prec = 100 # Set precision for Decimal operations
 
 
 class BankofCanadaRates:
@@ -67,11 +70,12 @@ class BankofCanadaRates:
         data = response.text
         rates_str = data[data.find("OBSERVATIONS") + len("OBSERVATIONS") + 1 :].strip()
         rates = (
-            pd.read_csv(io.StringIO(rates_str)).sort_values("date").set_index("date")
+            pd.read_csv(io.StringIO(rates_str), dtype=str).sort_values("date").set_index("date")
         )
         rates.index = pd.to_datetime(rates.index)
         all_days = pd.date_range(rates.index.min(), rates.index.max(), freq="D")
         rates = rates.reindex(all_days).ffill()
+        rates = rates.map(lambda x: Decimal(x.replace(",", "")) if x else Decimal('0'))
         self.rates = rates
 
     def get_rate(self, base_currency, quote_currency, date):
@@ -89,7 +93,7 @@ class BankofCanadaRates:
 
         Returns
         -------
-        float
+        Decimal
             The exchange rate.
         """
         for currency in [base_currency, quote_currency]:
@@ -100,7 +104,7 @@ class BankofCanadaRates:
             quote_cad = self.get_rate(quote_currency, "CAD", date)
             return base_cad / quote_cad
         if base_currency == "CAD":
-            return 1
+            return Decimal('1')
         return self.rates.loc[date, f"FX{base_currency}CAD"]
 
     @cached_property
@@ -117,10 +121,10 @@ class Transaction:
     description: str
     base_currency: str
     quote_currency: str
-    quantity: float
-    price: float
-    fees: float = 0
-    quote_to_reporting_rate: float = None
+    quantity: Decimal
+    price: Decimal
+    fees: Decimal = Decimal('0')
+    quote_to_reporting_rate: Decimal = None
     note: str = ""
 
     @property
@@ -144,7 +148,7 @@ class Transaction:
 
         Returns
         -------
-        float
+        Decimal
             The total cost of the transaction.
         """
         return self.quantity * self.price + self.fees
@@ -156,7 +160,7 @@ class Transaction:
 
         Returns
         -------
-        float
+        Decimal
             The total cost in the reporting currency.
         """
 
@@ -176,7 +180,7 @@ class Transaction:
         """
         instance = copy.deepcopy(self)
         instance.price = self.cost / self.quantity
-        instance.fees = 0
+        instance.fees = Decimal('0')
         return instance
 
     def flip(self):
@@ -207,7 +211,7 @@ class Transaction:
             base_currency=self.quote_currency,
             quote_currency=self.base_currency,
             quantity=-(self.quantity * self.price),
-            price=1 / self.price,
+            price=Decimal('1') / self.price,
             fees=self.fees / self.price,
             quote_to_reporting_rate=self.quote_to_reporting_rate * self.price,
         )
@@ -225,18 +229,18 @@ class Asset:
         The date of the last transaction or valuation update for the asset.
     asset : str
         The identifier or code for the asset, such as a stock ticker.
-    quantity : float, default=0
+    quantity : Decimal, default=0
         The total quantity of the asset held in the portfolio. Positive values indicate
         ownership, whereas negative values can represent short positions.
-    acb : float, default=0
+    acb : Decimal, default=0
         The per-unit Adjusted Cost Base (ACB) of the asset, representing the average cost
         per unit of acquisition adjusted for any sales, dividends, or other capital adjustments.
     """
 
     date: str
     asset: str
-    quantity: float = 0
-    acb: float = 0
+    quantity: Decimal = Decimal('0')
+    acb: Decimal = Decimal('0')
 
 
 class Holdings:
