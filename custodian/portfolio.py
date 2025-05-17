@@ -17,13 +17,13 @@ Holdings:
 
 import copy
 from dataclasses import asdict, dataclass
-from decimal import Decimal, getcontext
+from decimal import Decimal
 from typing import List, Tuple
 
 import pandas as pd
 from sortedcontainers import SortedDict
 
-getcontext().prec = 100  # Set precision for Decimal operations
+from custodian.utils import isclose
 
 
 @dataclass
@@ -196,7 +196,8 @@ class Holdings:
     @property
     def current(self) -> pd.DataFrame:
         """
-        Generates a DataFrame of the most recent record for each asset.
+        Generates a DataFrame of the most recent record for each asset,
+        representing the current portfolio composition and cost basis.
         """
         return self.df.sort_values("date").drop_duplicates(subset="asset", keep="last")
 
@@ -210,6 +211,11 @@ class Holdings:
             The asset record to add.
         overwrite : bool, optional
             Whether to overwrite an existing record with the same key. Defaults to False.
+
+        Returns
+        -------
+        Holdings
+            Self reference for method chaining.
         """
         key = self._key(asset)
         if key in self.historical.keys() and not overwrite:
@@ -217,7 +223,18 @@ class Holdings:
         self.historical[key] = asset
         return self
 
-    def get(self, asset: str, date: str = None) -> Asset:
+    def update(self, asset: Asset) -> "Holdings":
+        """
+        Updates an existing asset record or adds a new one if it doesn't exist.
+
+        Parameters
+        ----------
+        asset : Asset
+            The asset record to update or add.
+        """
+        return self.add(asset, overwrite=True)
+
+    def get(self, asset: str, date: str = None, auto_create: bool = False) -> Asset:
         """
         Retrieves the most recent record for an asset up to a specific date.
 
@@ -228,17 +245,20 @@ class Holdings:
         date : str, optional
             The date up to which to retrieve the record. If not provided, the most recent
             record is returned.
+        auto_create : bool, optional
+            Whether to create a new asset record if none is found. Defaults to False.
 
         Returns
         -------
         Asset
-            An Asset instance representing the retrieved record. If no record is found, a
-            new Asset instance with the provided asset code and date is returned.
+            The most recent asset record up to the specified date, or a new asset record
+            if `auto_create` is True. Otherwise, returns None.
         """
         for key in reversed(self.historical.keys()):
             if key[1] == asset and (date is None or key[0] <= date):
                 return copy.deepcopy(self.historical[key])
-        return Asset(date, asset)
+        if auto_create:
+            return Asset(date, asset)
 
     def _key(self, asset: Asset) -> Tuple[str, str]:
         """
@@ -246,3 +266,15 @@ class Holdings:
         assets in the historical dictionary.
         """
         return (asset.date, asset.asset)
+
+    def _validate_asset(self, asset: Asset):
+        """
+        Validates the asset record to ensure it meets certain criteria.
+
+        Parameters
+        ----------
+        asset : Asset
+            The asset record to validate.
+        """
+        if asset.quantity < 0 and not isclose(asset.quantity, 0):
+            raise ValueError(f"Quantity cannot be negative. Asset: {asset}")

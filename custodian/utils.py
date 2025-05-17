@@ -28,3 +28,17 @@ def isclose(a, b, rel_tol=Decimal("1e-9"), abs_tol=Decimal("0")):
         return True
     diff = abs(a - b)
     return diff <= abs_tol or diff <= rel_tol * max(abs(a), abs(b))
+
+
+def displayPandas(df, precision=10, text=False):
+    df = df.copy()
+    for col in df.columns:
+        if df[col].apply(lambda x: isinstance(x, Decimal)).any():
+            df[col] = df[col].apply(lambda x: f"{x:.{precision}g}" if isinstance(x, Decimal) else x)
+
+    if text:
+        return df.to_markdown()
+    else:
+        from IPython.display import HTML, display
+
+        display(HTML(df.to_html()))

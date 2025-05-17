@@ -5,13 +5,21 @@ Functions for processing transactions and analyzing portfolios.
 import json
 from dataclasses import asdict
 from decimal import Decimal
+from typing import List, Tuple
 
-from .exchange import BankofCanadaRates
-from .portfolio import Holdings, Transaction
-from .utils import isclose
+import pandas as pd
+
+from custodian.exchange import BankofCanadaRates
+from custodian.portfolio import Asset, Holdings, Transaction
+from custodian.utils import isclose
 
 
-def process_transaction(trx, holdings, exchange, reporting_currency="CAD"):
+def process_transaction(
+    trx: Transaction,
+    holdings: Holdings,
+    exchange: BankofCanadaRates,
+    reporting_currency: str = "CAD",
+):
     """
     Process a single transaction, updating holdings and recording capital gains.
 
@@ -28,10 +36,11 @@ def process_transaction(trx, holdings, exchange, reporting_currency="CAD"):
 
     Returns
     -------
-    None
-        Updates holdings and capgains in place
+    dict or None
+        Dictionary containing capital gain information if a taxable event occurred,
+        or None if no taxable event. Updates holdings in place.
     """
-    # reflect fees in the price
+    # Incorporate transaction fees into the price to simplify calculations
     trx = trx.with_effective_price()
 
     # Determine the quote_to_reporting_rate
@@ -48,32 +57,38 @@ def process_transaction(trx, holdings, exchange, reporting_currency="CAD"):
                     f"Error getting rate for {trx.date} {trx.quote_currency} to {reporting_currency}: {e!s}"
                 )
 
-    # Vesting transactions are funded by the company, so we need to add
-    # a preceding funding transaction
+    # Flip the transaction if it is a sell order
+    if trx.quantity < 0:
+        trx = trx.flip()
+
+    # Create a synthetic funding transaction to represent employer-provided equity compensation
     if "Vest" in trx.description:
+        # Artificial funding transaction
+        funding_trx = Transaction(
+            date=trx.date,
+            description=trx.description.replace("Vest", "Funding"),
+            base_currency=trx.quote_currency,
+            quote_currency=reporting_currency,
+            quantity=trx.cost,
+            price=trx.quote_to_reporting_rate,
+            fees=Decimal("0"),
+            quote_to_reporting_rate=Decimal("1"),
+        )
+        # Update the cash balance in the reporting currency to reflect the vested compensation
+        reporting_holding = holdings.get(reporting_currency, trx.date)
+        reporting_holding.quantity += funding_trx.cost
+        holdings.update(reporting_holding)
+
         process_transaction(
-            Transaction(
-                date=trx.date,
-                description=trx.description.replace("Vest", "Funding"),
-                base_currency=trx.quote_currency,
-                quote_currency=reporting_currency,
-                quantity=trx.cost,
-                price=trx.quote_to_reporting_rate,
-                fees=Decimal("0"),
-                quote_to_reporting_rate=Decimal("1"),
-            ),
+            trx=funding_trx,
             holdings=holdings,
             exchange=exchange,
             reporting_currency=reporting_currency,
         )
 
-    # Flip the transaction if it is a sell order
-    if trx.quantity < 0:
-        trx = trx.flip()
-
     # Get the current holdings
-    base_holding = holdings.get(trx.base_currency, trx.date)
-    quote_holding = holdings.get(trx.quote_currency, trx.date)
+    base_holding = holdings.get(trx.base_currency, trx.date, auto_create=True)
+    quote_holding = holdings.get(trx.quote_currency, trx.date, auto_create=True)
 
     # Update the ACB and quantity for the base currency
     if trx.base_currency != reporting_currency:
@@ -83,7 +98,7 @@ def process_transaction(trx, holdings, exchange, reporting_currency="CAD"):
     base_holding.quantity += trx.quantity
     base_holding.date = trx.date
 
-    # Calculate the capital gain for liquidating transactions
+    # Calculate gain/loss of a disposition event
     if trx.base_currency == reporting_currency:
         cost_base = quote_holding.acb * trx.cost
         gross_proceeds = trx.quantity
@@ -111,13 +126,18 @@ def process_transaction(trx, holdings, exchange, reporting_currency="CAD"):
     quote_holding.quantity -= trx.cost
     quote_holding.date = trx.date
 
-    holdings.add(base_holding, overwrite=True)
-    holdings.add(quote_holding, overwrite=True)
+    holdings.update(base_holding)
+    holdings.update(quote_holding)
 
     return gain
 
 
-def process_transactions(transactions, holdings=None, exchange=None, reporting_currency="CAD"):
+def process_transactions(
+    transactions: List[Transaction],
+    holdings: Holdings = None,
+    exchange: BankofCanadaRates = None,
+    reporting_currency: str = "CAD",
+):
     """
     Process a list of transactions and return holdings and capital gains.
 
@@ -135,15 +155,68 @@ def process_transactions(transactions, holdings=None, exchange=None, reporting_c
     tuple
         (holdings, capgains) - The updated holdings and capital gains list
     """
-    capgains = []
+    gains = []
 
     if holdings is None:
         holdings = Holdings()
     if exchange is None:
         exchange = BankofCanadaRates(start_date="2018-01-01")
 
+    if len(transactions) == 0:
+        return holdings, gains
+
+    # Sort transactions by date
+    transactions = sorted(transactions, key=lambda x: x.date)
+
+    if holdings.get(reporting_currency) is None:
+        holdings.add(
+            Asset(
+                asset=reporting_currency,
+                date=transactions[0].date,
+                acb=Decimal("1"),
+            )
+        )
+
     # Process each transaction
     for trx in transactions:
-        process_transaction(trx, holdings, capgains, reporting_currency, exchange)
+        result = process_transaction(
+            trx, holdings=holdings, exchange=exchange, reporting_currency=reporting_currency
+        )
+        if result is not None:
+            gains.append(result)
 
-    return holdings, capgains
+    return holdings, gains
+
+
+def load_transactions(file_path) -> Tuple[List[Transaction], pd.DataFrame]:
+    """
+    Load transactions from a CSV file.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the CSV file
+
+    Returns
+    -------
+    DataFrame
+        DataFrame containing the loaded transactions
+    """
+    decimal_columns = ["quantity", "price", "fees"]
+    # Read the data as strings to avoid rounding issues
+    trxs_log = pd.read_csv(file_path, dtype=str)
+    trxs_log.columns = [col.lower().replace(" ", "_") for col in trxs_log.columns]
+    trxs_log.index.name = "id"
+    # Fill in missing values
+    trxs_log = trxs_log.sort_values(["date", "id"]).fillna(
+        {"description": "", "fees": 0, "note": ""}
+    )
+    # Convert numeric columns to Decimal
+    for col in decimal_columns:
+        trxs_log[col] = trxs_log[col].apply(
+            lambda x: Decimal(x.replace(",", "")) if x else Decimal(0)
+        )
+
+    assert trxs_log.isnull().sum().sum() == 0, "Missing values found."
+    trxs = trxs_log.apply(lambda r: Transaction(**r), axis=1).tolist()
+    return trxs, trxs_log
