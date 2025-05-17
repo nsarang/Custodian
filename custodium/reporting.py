@@ -1,4 +1,5 @@
 import pandas as pd
+from portfolio import Holdings
 
 
 def calculate_yearly_gains(capgains):
@@ -8,7 +9,7 @@ def calculate_yearly_gains(capgains):
     Parameters
     ----------
     capgains : list
-        List of capital gains records
+        List of capital gains records returned by `process_transactions()`
 
     Returns
     -------
@@ -32,3 +33,83 @@ def calculate_yearly_gains(capgains):
             yearly_gains.append(yearly_sum)
 
     return pd.DataFrame(yearly_gains)
+
+
+def plot_holdings_history(
+    holdings: Holdings,
+    show_plot: bool = True,
+    quantity_title: str = "Quantity",
+    acb_title: str = "ACB (CAD)",
+    date_title: str = "Date",
+    height: int = 600,
+    width: int = 900,
+):
+    """
+    Generate an interactive plot showing the history of holdings quantities and ACB.
+
+    Creates a dual-axis plot with quantity on the primary y-axis and ACB on the
+    secondary y-axis, both plotted over time.
+
+    Parameters
+    ----------
+    holdings : Holdings
+        The Holdings object containing historical data to plot
+    show_plot : bool, optional
+        Whether to display the plot immediately, defaults to True
+    quantity_title : str, optional
+        Title for the primary y-axis, defaults to "Quantity"
+    acb_title : str, optional
+        Title for the secondary y-axis, defaults to "ACB (CAD)"
+    date_title : str, optional
+        Title for the x-axis, defaults to "Date"
+    height : int, optional
+        Plot height in pixels, defaults to 600
+    width : int, optional
+        Plot width in pixels, defaults to 900
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        The generated figure object for further customization or saving
+
+    Examples
+    --------
+    >>> fig = plot_holdings_history(holdings)
+    >>> # Save to file instead of displaying
+    >>> fig.write_html("holdings_history.html")
+    >>> # Customize further
+    >>> fig.update_layout(title="My Portfolio History")
+    """
+    import plotly.express as px
+    from plotly.subplots import make_subplots
+
+    # Ensure we have data to plot
+    if len(holdings.df) == 0:
+        raise ValueError("Holdings contain no data to plot")
+
+    # Create quantity plot
+    fig_quantity = px.line(holdings.df, x="date", y="quantity", color="asset", markers=True)
+
+    # Create ACB plot
+    fig_acb = px.line(holdings.df, x="date", y="acb", color="asset")
+
+    # Update ACB traces to use secondary y-axis and dashed lines
+    fig_acb.update_traces(yaxis="y2", line=dict(dash="dashdot"))
+
+    # Combine into a single figure with dual y-axes
+    subfig = make_subplots(specs=[[{"secondary_y": True}]])
+    subfig.add_traces(fig_quantity.data + fig_acb.data)
+
+    # Set axis titles
+    subfig.layout.xaxis.title = date_title
+    subfig.layout.yaxis.title = quantity_title
+    subfig.layout.yaxis2.title = f"{acb_title} --"
+
+    # Set figure dimensions
+    subfig.update_layout(height=height, width=width)
+
+    # Display the plot if requested
+    if show_plot:
+        subfig.show()
+
+    return subfig
