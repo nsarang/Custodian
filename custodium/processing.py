@@ -2,6 +2,7 @@
 Functions for processing transactions and analyzing portfolios.
 """
 
+import datetime as dt
 import json
 from dataclasses import asdict
 from decimal import Decimal
@@ -157,22 +158,27 @@ def process_transactions(
     """
     gains = []
 
-    if holdings is None:
-        holdings = Holdings()
-    if exchange is None:
-        exchange = BankofCanadaRates(start_date="2018-01-01")
-
     if len(transactions) == 0:
         return holdings, gains
 
     # Sort transactions by date
     transactions = sorted(transactions, key=lambda x: x.date)
+    min_date = transactions[0].date
+
+    if holdings is None:
+        holdings = Holdings()
+
+    if exchange is None:
+        start_date = (dt.datetime.fromisoformat(min_date) - dt.timedelta(days=30)).strftime(
+            "%Y-%m-%d"
+        )
+        exchange = BankofCanadaRates(start_date=start_date)
 
     if holdings.get(reporting_currency) is None:
         holdings.add(
             Asset(
                 asset=reporting_currency,
-                date=transactions[0].date,
+                date=min_date,
                 acb=Decimal("1"),
             )
         )

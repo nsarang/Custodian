@@ -38,7 +38,7 @@ def calculate_yearly_gains(capgains):
 
 def plot_holdings_history(
     holdings: Holdings,
-    show_plot: bool = True,
+    show_plot: bool = False,
     quantity_title: str = "Quantity",
     acb_title: str = "ACB (CAD)",
     date_title: str = "Date",
