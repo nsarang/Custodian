@@ -60,3 +60,7 @@ calculate_yearly_gains(gains)
 
 ## Disclaimer
 This package is provided for educational purposes only. Users should not rely on this software for financial advice, tax reporting, or investment decisions without independent verification. The authors accept no responsibility for any financial losses, tax implications, or other issues that may arise from the use of this software.
+
+## LICENSE
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
