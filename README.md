@@ -1,5 +1,18 @@
 # Custodium
 
+<div align="center">
+
+<img alt="Custodium" src="logo.jpg" width="500px" style="max-width: 100%;">
+<br/>
+<br/>
+
+[![PyPI](https://img.shields.io/pypi/v/custodium?logoSize=auto)](https://pypi.org/project/custodium/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/custodium?logoSize=auto)](https://pypi.org/project/custodium/)
+![License](https://img.shields.io/pypi/l/custodium?logo=auto)
+
+</div>
+
+
 Custodium is a Python package for tracking investment portfolios and calculating adjusted cost basis (ACB) for Canadian capital gain/loss calculations. Primarily designed for educational purposes.
 
 ## Key Features
