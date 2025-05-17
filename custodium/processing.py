@@ -9,9 +9,9 @@ from typing import List, Tuple
 
 import pandas as pd
 
-from custodian.exchange import BankofCanadaRates
-from custodian.portfolio import Asset, Holdings, Transaction
-from custodian.utils import isclose
+from custodium.exchange import BankofCanadaRates
+from custodium.portfolio import Asset, Holdings, Transaction
+from custodium.utils import isclose
 
 
 def process_transaction(

@@ -23,7 +23,7 @@ from typing import List, Tuple
 import pandas as pd
 from sortedcontainers import SortedDict
 
-from custodian.utils import isclose
+from custodium.utils import isclose
 
 
 @dataclass
