@@ -46,7 +46,8 @@ class BankofCanadaRates:
         rates = pd.read_csv(io.StringIO(rates_str), dtype=str).sort_values("date").set_index("date")
         rates.index = pd.to_datetime(rates.index)
         all_days = pd.date_range(rates.index.min(), rates.index.max(), freq="D")
-        rates = rates.reindex(all_days).ffill()
+        rates = rates.reindex(all_days).infer_objects(copy=False).ffill().bfill()
+        rates = rates.loc[:, rates.notna().all(axis=0)]
         rates = rates.map(lambda x: Decimal(x.replace(",", "")) if x else Decimal("0"))
         self.rates = rates
 
