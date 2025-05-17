@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img alt="Custodium" src="logo.jpg" width="500px" style="max-width: 100%;">
+<img alt="Custodium" src="https://raw.githubusercontent.com/nsarang/custodium/refs/heads/main/logo.jpg" width="500px" style="max-width: 100%;">
 <br/>
 <br/>
 
@@ -41,7 +41,7 @@ pip install custodium
 
 ### Processing Transactions
 
-Create a CSV file with these columns:
+Create a CSV file (e.g. my_transactions.csv) with these columns:
 ```csv
 date,description,base_currency,quote_currency,quantity,price,fees,note
 2023-01-15,Buy AAPL shares,AAPL,USD,10,150.25,9.95,Initial purchase
@@ -72,7 +72,7 @@ holdings.add(
         date="2023-01-01",
         asset="CAD",
         quantity=Decimal("10000"),
-        acb=Decimal("1"),
+        acb=Decimal("1"), # Must be 1 for the reporting currency
     )
 )
 holdings.add(
@@ -80,7 +80,7 @@ holdings.add(
         date="2023-01-01",
         asset="USD",
         quantity=Decimal("10000"),
-        acb=Decimal("1.35"),  # ACB in CAD per unit of USD
+        acb=Decimal("1.35"),
     )
 )
 
