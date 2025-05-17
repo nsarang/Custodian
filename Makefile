@@ -42,7 +42,7 @@ pre-commit:
 
 test: pre-commit
 	$(ACTIVATE_CMD) && \
-	$(PYTHON) -m pytest -v --cov=pymortem --cov-report=term-missing --cov-report=xml:coverage.xml && \
+	$(PYTHON) -m pytest -v --cov=custodium --cov-report=term-missing --cov-report=xml:coverage.xml && \
 	coverage-badge -f -o coverage.svg
 
 build: clean

@@ -2,7 +2,7 @@ import re
 
 from setuptools import find_packages, setup
 
-with open("custodian/__init__.py", encoding="utf-8") as fh:
+with open("custodium/__init__.py", encoding="utf-8") as fh:
     content = fh.read()
     version = re.search(r"__version__\s*=\s*([\"\'])(.+?)\1", content).group(2)
 
@@ -13,7 +13,7 @@ with open("requirements/app.txt", encoding="utf-8") as fh:
     app_dependencies = fh.read().splitlines()
 
 setup(
-    name="custodian",
+    name="custodium",
     version=version,
     packages=find_packages(),
     install_requires=app_dependencies,
@@ -23,11 +23,11 @@ setup(
     description="A Python library for financial transaction processing and analysis.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/nsarang/custodian",
+    url="https://github.com/nsarang/custodium",
     project_urls={
-        "Homepage": "https://github.com/nsarang/custodian",
-        "Issues": "https://github.com/nsarang/custodian/issues",
-        "Documentation": "https://github.com/nsarang/custodian#readme",
+        "Homepage": "https://github.com/nsarang/custodium",
+        "Issues": "https://github.com/nsarang/custodium/issues",
+        "Documentation": "https://github.com/nsarang/custodium#readme",
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
