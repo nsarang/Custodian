@@ -12,8 +12,18 @@
 
 </div>
 
-
 Custodium is a Python package for tracking investment portfolios and calculating adjusted cost basis (ACB) for Canadian capital gain/loss calculations. Primarily designed for educational purposes, so please read the source code and understand the logic before using it for real-world applications and having fun with it!
+
+## Table of Contents
+- [Custodium](#custodium)
+  - [Table of Contents](#table-of-contents)
+  - [Key Features](#key-features)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Processing Transactions](#processing-transactions)
+  - [Code Structure](#code-structure)
+  - [Disclaimer](#disclaimer)
+  - [LICENSE](#license)
 
 ## Key Features
 
@@ -88,6 +98,24 @@ displayPandas(yearly_gains, precision=5)
 fig = plot_holdings_history(holdings)
 fig.show()
 ```
+
+## Code Structure
+    ├── custodium
+    │   ├── exchange.py     # Currency exchange rate management
+    │   ├── portfolio.py    # Core data structures (Transaction, Asset, Holdings)
+    │   ├── processing.py   # Transaction processing logic and CSV loading
+    │   ├── reporting.py    # Capital gains reporting and visualization tools
+    │   ├── utils.py        # Utility functions
+    │   └── __init__.py     # Package version and imports
+    ├── requirements        # Package dependencies
+    ├── tests               # Unit tests for package components
+    ├── .gitignore
+    ├── .pre-commit-config.yaml  # Pre-commit hooks configuration
+    ├── LICENSE
+    ├── Makefile                 # Build and test automation
+    ├── pyproject.toml           # CI/CD configuration
+    ├── README.md
+    └── setup.py                 # Package installation configuration
 
 ## Disclaimer
 This package is provided for educational purposes only. Users should not rely on this software for financial advice, tax reporting, or investment decisions without independent verification. The authors accept no responsibility for any financial losses, tax implications, or other issues that may arise from the use of this software.
