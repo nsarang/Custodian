@@ -1,5 +1,6 @@
 import pandas as pd
-from portfolio import Holdings
+
+from custodium.portfolio import Holdings
 
 
 def calculate_yearly_gains(capgains):
