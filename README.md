@@ -2,12 +2,13 @@
 
 <div align="center">
 
-<img alt="Custodium" src="https://raw.githubusercontent.com/nsarang/custodium/refs/heads/main/logo.jpg" width="500px" style="max-width: 100%;">
+<img alt="Custodium" src="https://raw.githubusercontent.com/nsarang/custodium/refs/heads/main/images/logo.jpg" width="500px" style="max-width: 100%;">
 <br/>
 <br/>
 
+[![GitHub](https://img.shields.io/badge/nsarang-custodium-red?logo=github&logoSize=auto)](https://github.com/nsarang/custodium)
 [![PyPI](https://img.shields.io/pypi/v/custodium?logoSize=auto)](https://pypi.org/project/custodium/)
-[![Python Versions](https://img.shields.io/pypi/pyversions/custodium?logoSize=auto)](https://pypi.org/project/custodium/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/custodium?logo=python&logoSize=auto)](https://pypi.org/project/custodium/)
 ![License](https://img.shields.io/pypi/l/custodium?logo=auto)
 
 </div>
@@ -20,7 +21,6 @@ Custodium is a Python package for tracking investment portfolios and calculating
   - [Key Features](#key-features)
   - [Installation](#installation)
   - [Usage](#usage)
-    - [Processing Transactions](#processing-transactions)
   - [Code Structure](#code-structure)
   - [Disclaimer](#disclaimer)
   - [LICENSE](#license)
@@ -39,9 +39,9 @@ pip install custodium
 
 ## Usage
 
-### Processing Transactions
+#### Processing Transactions
 
-Create a CSV file (e.g. my_transactions.csv) with these columns:
+1. Create a CSV file (e.g. my_transactions.csv) with these columns:
 ```csv
 date,description,base_currency,quote_currency,quantity,price,fees,note
 2023-01-15,Buy AAPL shares,AAPL,USD,10,150.25,9.95,Initial purchase
@@ -49,7 +49,7 @@ date,description,base_currency,quote_currency,quantity,price,fees,note
 2023-06-30,Sell AAPL shares,AAPL,USD,-5,175.50,9.95,Partial profit taking
 2023-08-15,Convert USD to CAD,CAD,USD,1000,0.73,5.00,Currency repatriation
 ```
-Then load and process:
+2. Then load and process:
 
 ```python
 from decimal import Decimal
@@ -58,14 +58,14 @@ from custodium.processing import load_transactions, process_transactions
 from custodium.reporting import calculate_yearly_gains, plot_holdings_history
 from custodium.utils import displayPandas
 
-# Load transactions from CSV
+# Load the transactions from CSV
 transactions, df_log = load_transactions("my_transactions.csv")
 
 # Create the portfolio
 holdings = Holdings()
-reporting_currency = "CAD"
+reporting_currency = "CAD" # Canadian Dollar
 
-# Create initial holdings with funding
+# Create initial holdings
 holdings = Holdings()
 holdings.add(
     Asset(
@@ -84,8 +84,12 @@ holdings.add(
     )
 )
 
-# Process transactions
-holdings, gains = process_transactions(transactions, holdings=holdings, reporting_currency=reporting_currency)
+# Process the transactions
+holdings, gains = process_transactions(
+    transactions,
+    holdings=holdings,
+    reporting_currency=reporting_currency,
+)
 
 # View current holdings with readable formatting
 displayPandas(holdings.current, precision=2)
@@ -95,9 +99,14 @@ yearly_gains = calculate_yearly_gains(gains)
 displayPandas(yearly_gains, precision=5)
 
 # Plot the history of holdings (Ploty is required)
-fig = plot_holdings_history(holdings)
+fig = plot_holdings_history(holdings, acb_title="ACB $CAD")
 fig.show()
 ```
+
+3. Sample output:
+
+<img alt="Custodium" src="https://raw.githubusercontent.com/nsarang/custodium/refs/heads/main/images/sample_output.png" width="700px" style="max-width: 100%;">
+
 
 ## Code Structure
     ├── custodium
