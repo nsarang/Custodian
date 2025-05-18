@@ -40,10 +40,11 @@ def plot_holdings_history(
     holdings: Holdings,
     show_plot: bool = False,
     quantity_title: str = "Quantity",
-    acb_title: str = "ACB (CAD)",
+    acb_title: str = "ACB",
     date_title: str = "Date",
     height: int = 600,
     width: int = 900,
+    title: str = "Portfolio Holdings History",
 ):
     """
     Generate an interactive plot showing the history of holdings quantities and ACB.
@@ -67,6 +68,8 @@ def plot_holdings_history(
         Plot height in pixels, defaults to 600
     width : int, optional
         Plot width in pixels, defaults to 900
+    title : str, optional
+        Title for the plot
 
     Returns
     -------
@@ -84,7 +87,6 @@ def plot_holdings_history(
     import plotly.express as px
     from plotly.subplots import make_subplots
 
-    # Ensure we have data to plot
     if len(holdings.df) == 0:
         raise ValueError("Holdings contain no data to plot")
 
@@ -101,15 +103,17 @@ def plot_holdings_history(
     subfig = make_subplots(specs=[[{"secondary_y": True}]])
     subfig.add_traces(fig_quantity.data + fig_acb.data)
 
-    # Set axis titles
     subfig.layout.xaxis.title = date_title
-    subfig.layout.yaxis.title = quantity_title
-    subfig.layout.yaxis2.title = f"{acb_title} --"
+    subfig.layout.yaxis.title = f"{quantity_title} (solid lines)"
+    subfig.layout.yaxis2.title = f"{acb_title} (dashed lines)"
 
-    # Set figure dimensions
+    subfig.update_layout(
+        title=dict(text=title, x=0.5, xanchor="center", font=dict(weight="bold", size=18)),
+        legend=dict(x=1.05, xanchor="left", y=0.5, yanchor="middle"),
+    )
+
     subfig.update_layout(height=height, width=width)
 
-    # Display the plot if requested
     if show_plot:
         subfig.show()
 
