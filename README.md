@@ -105,7 +105,7 @@ fig.show()
 
 3. Sample output:
 
-<img alt="Custodium" src="https://raw.githubusercontent.com/nsarang/custodium/refs/heads/main/images/sample_output.png" width="700px" style="max-width: 100%;">
+<img alt="Custodium" src="https://raw.githubusercontent.com/nsarang/custodium/refs/heads/main/images/sample_output.png" width="1000px" style="max-width: 100%;">
 
 
 ## Code Structure
